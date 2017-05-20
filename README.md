@@ -25,6 +25,7 @@ unpack it
 install it
 
 ```
+  $ cd llfuse-1.2
   $ python setup.py build_ext --inplace
 ```
 ### Create an image file
