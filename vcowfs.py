@@ -12,6 +12,21 @@ import errno
 
 mountpoint = ''
 
+class Node():
+    def __init__(self, is_dir=False, name, permision=777, data):
+        self.is_dir
+        self.name
+        self.create_date
+        self.modify_date
+        self.permision
+        self.child = []
+        self.data = ''
+
+    def addChild(node):
+        self.child.append(node)
+
+
+
 #Code from lltest.py need to implement!!
 class Vcosfs(llfuse.Operations):
     def __init__(self):
