@@ -6,6 +6,13 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 
 on ubuntu 16.04
 
+install pip and setuptools
+```
+  $ sudo apt-get install python3-pip
+  $ pip3 install setuptools
+```
+
+install package
 ```
   $ sudo apt-get install libattr1-dev automake autotools-dev g++ git libcurl4-gnutls-dev libfuse-dev libssl-dev libxml2-dev make pkg-config
 ```
