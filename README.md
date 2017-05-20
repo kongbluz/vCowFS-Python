@@ -26,7 +26,7 @@ install it
 
 ```
   $ cd llfuse-1.2
-  $ python setup.py build_ext --inplace
+  $ python3 setup.py build_ext --inplace
 ```
 ### Create an image file
 
@@ -34,17 +34,12 @@ install it
   $dd if=/dev/zero of=storage.img bs=1M count=10
   $mkfs ntfs -F storage.img
 ```
-### try example(passthrough)
-
-create dir "tmp" and "tmp2"
-
-```
-  $ python passthroughfs.py tmp tmp2
-```
 
 # Run !!
 
-Will be available soon
+```
+  $ python3 vcowfs.py storage.img tmp 15
+```
 
 # Group Member
 * Pongsatorn Wanitchinchai
