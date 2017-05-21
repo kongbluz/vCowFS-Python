@@ -23,13 +23,22 @@ class RootINode():
     def getInodeByID(self, id):
         return self.slot[id]
 
-class FileNode():
+class Inode():
     def __init__(self, id):
         self.id = id
+        self.permission = '777'
+        self.type = None
+        self.c_time = int(time.time())
+
+    def pms_str(self):
+        return 'rwxrwxrwx'
+
+
+class FileNode(Inode):
+    def __init__(self, id):
+        super().__init__(id)
         self.type = 'file'
         self.data = ''
-        self.permission = '777'
-        self.c_time = int(time.time())
 
     def write(self, data):
         self.data = data
@@ -37,18 +46,13 @@ class FileNode():
     def read(self):
         return self.data
 
-    def pms_str(self):
-        return 'rwxrwxrwx'
 
-
-class DirNode():
+class DirNode(Inode):
     def __init__(self, id, parent):
-        self.id = id
+        super().__init__(id)
         self.type = 'dir'
         self.fileTable = {}
         self.parent = parent
-        self.permission = '777'
-        self.c_time = int(time.time())
 
     def addFile(self, name):
         f = r_inode.addFile()
@@ -72,10 +76,6 @@ class DirNode():
             print('{}{} {} id: {} time: {}'.format('-' if f.type == 'file' else 'd',
                                          f.pms_str(),
                                          file_row, fid, f.c_time))
-
-    def pms_str(self):
-        return 'rwxrwxrwx'
-
 
 r_inode = RootINode()
 rootdir = r_inode.addDir(None)
