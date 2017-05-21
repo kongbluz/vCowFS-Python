@@ -2,3 +2,4 @@ llfuse-1.2/
 tmp/
 tmp2/
 storage.img
+*.pyc

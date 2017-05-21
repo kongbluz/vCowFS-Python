@@ -10,22 +10,9 @@ import stat
 import logging
 import errno
 import datetime
+import inodestruct
 
 mountpoint = ''
-
-class Node():
-    def __init__(self, name,  data, permision=777, is_dir=False):
-        self.is_dir = is_dir
-        self.name = name
-        self.create_date = datetime.datetime.now()
-        self.modify_date = datetime.datetime.now()
-        self.permision = permision
-        self.child = []
-        self.data = ''
-
-    def addChild(self, node):
-        self.child.append(node)
-
 
 #Code from lltest.py need to implement!!
 class Vcosfs(llfuse.Operations):
@@ -96,8 +83,6 @@ def parse_args(args):
     parser.add_argument('time', type=str,
                         help='time of versioning period')
     return parser.parse_args(args)
-
-root_node = Node(is_dir=True, name='/', data=None)
 
 def main():
     options = parse_args(sys.argv[1:])
