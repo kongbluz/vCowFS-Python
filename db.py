@@ -143,7 +143,8 @@ class Operations(llfuse.Operations):
         return row
 
     def lookup(self, inode_p, name, ctx=None):
-        # print('Lookup' + str(inode_p))
+        print("lookup")
+        print('Lookup' + str(inode_p))
         # if name == '.':
         #     inode = inode_p
         # elif name == '..':
@@ -155,12 +156,15 @@ class Operations(llfuse.Operations):
         #                              (name, inode_p))['inode']
         #     except NoSuchRowError:
         #         raise(llfuse.FUSEError(errno.ENOENT))
-        inode = r_inode.getInodeByID(inode_p)
-
-        return self.getattr(inode, ctx)
+        # print(inode)
+        # # inode = rootdir.fileTable[name.decode()]
+        #
+        # return self.getattr(inode, ctx)
+        return "ha"
 
 
     def getattr(self, inode, ctx=None):
+        print("getattr")
         # print("Inode is" + str(inode))
         # res: inode = 1 (id)
 
@@ -198,25 +202,36 @@ class Operations(llfuse.Operations):
         return entry
 
     def readlink(self, inode, ctx):
+        print("readlink")
         return self.get_row('SELECT * FROM inodes WHERE id=?', (inode,))['target']
 
     def opendir(self, inode, ctx):
+        print("opendir")
         return inode
 
     def readdir(self, inode, off):
+        print("readdir")
+        print("####foooooo" + str(inode))
         if off == 0:
             off = -1
 
-        # cursor2 = self.db.cursor()
-        # cursor2.execute("SELECT * FROM contents WHERE parent_inode=? "
-        #                 'AND rowid > ? ORDER BY rowid', (inode, off))
+        cursor2 = self.db.cursor()
+        cursor2.execute("SELECT * FROM contents WHERE parent_inode=? "
+                        'AND rowid > ? ORDER BY rowid', (inode, off))
 
-        for row in rootdir.fileTable:
-            id = rootdir.fileTable[row]
-            print(id)
-            yield (str.encode(row), self.getattr(id), id)
+        # for row in rootdir.fileTable:
+        #     id = rootdir.fileTable[row]
+        #     print(id)
+        #     yield (str.encode(row), self.getattr(id), id)
+        # c = r_inode.getInodeByID(inode)
+        c = rootdir.fileTable
+        for name in c:
+            print("####File " + name)
+            id = c[name]
+            yield (str.encode(name), self.getattr(id), id)
 
     def unlink(self, inode_p, name,ctx):
+        print("unlink")
         entry = self.lookup(inode_p, name)
 
         if stat.S_ISDIR(entry.st_mode):
@@ -225,6 +240,7 @@ class Operations(llfuse.Operations):
         self._remove(inode_p, name, entry)
 
     def rmdir(self, inode_p, name, ctx):
+        print("rmdir")
         entry = self.lookup(inode_p, name)
 
         if not stat.S_ISDIR(entry.st_mode):
@@ -233,6 +249,7 @@ class Operations(llfuse.Operations):
         self._remove(inode_p, name, entry)
 
     def _remove(self, inode_p, name, entry):
+        print("_remove")
         if self.get_row("SELECT COUNT(inode) FROM contents WHERE parent_inode=?",
                         (entry.st_ino,))[0] > 0:
             raise llfuse.FUSEError(errno.ENOTEMPTY)
@@ -244,12 +261,14 @@ class Operations(llfuse.Operations):
             self.cursor.execute("DELETE FROM inodes WHERE id=?", (entry.st_ino,))
 
     def symlink(self, inode_p, name, target, ctx):
+        print("symlink")
         mode = (stat.S_IFLNK | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
                 stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP |
                 stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
         return self._create(inode_p, name, mode, ctx, target=target)
 
     def rename(self, inode_p_old, name_old, inode_p_new, name_new, ctx):
+        print("rename")
         entry_old = self.lookup(inode_p_old, name_old)
 
         try:
@@ -271,7 +290,7 @@ class Operations(llfuse.Operations):
 
     def _replace(self, inode_p_old, name_old, inode_p_new, name_new,
                  entry_old, entry_new):
-
+        print("_replace")
         if self.get_row("SELECT COUNT(inode) FROM contents WHERE parent_inode=?",
                         (entry_new.st_ino,))[0] > 0:
             raise llfuse.FUSEError(errno.ENOTEMPTY)
@@ -286,6 +305,7 @@ class Operations(llfuse.Operations):
 
 
     def link(self, inode, new_inode_p, new_name, ctx):
+        print("link")
         entry_p = self.getattr(new_inode_p)
         if entry_p.st_nlink == 0:
             log.warn('Attempted to create entry %s with unlinked parent %d',
@@ -298,6 +318,7 @@ class Operations(llfuse.Operations):
         return self.getattr(inode)
 
     def setattr(self, inode, attr, fields, fh, ctx):
+        print("setattr")
 
         if fields.update_size:
             data = self.get_row('SELECT data FROM inodes WHERE id=?', (inode,))[0]
@@ -332,12 +353,15 @@ class Operations(llfuse.Operations):
         return self.getattr(inode)
 
     def mknod(self, inode_p, name, mode, rdev, ctx):
+        print("mknod")
         return self._create(inode_p, name, mode, ctx, rdev=rdev)
 
     def mkdir(self, inode_p, name, mode, ctx):
+        print("mkdir")
         return self._create(inode_p, name, mode, ctx)
 
     def statfs(self, ctx):
+        print("statfs")
         stat_ = llfuse.StatvfsData()
 
         stat_.f_bsize = 512
@@ -356,6 +380,7 @@ class Operations(llfuse.Operations):
         return stat_
 
     def open(self, inode, flags, ctx):
+        print("open")
         # Yeah, unused arguments
         #pylint: disable=W0613
         self.inode_open_count[inode] += 1
@@ -364,17 +389,20 @@ class Operations(llfuse.Operations):
         return inode
 
     def access(self, inode, mode, ctx):
+        print("access")
         # Yeah, could be a function and has unused arguments
         #pylint: disable=R0201,W0613
         return True
 
     def create(self, inode_parent, name, mode, flags, ctx):
+        print("create")
         #pylint: disable=W0612
         entry = self._create(inode_parent, name, mode, ctx)
         self.inode_open_count[entry.st_ino] += 1
         return (entry.st_ino, entry)
 
     def _create(self, inode_p, name, mode, ctx, rdev=0, target=None):
+        print("_create")
         if self.getattr(inode_p).st_nlink == 0:
             log.warn('Attempted to create entry %s with unlinked parent %d',
                      name, inode_p)
@@ -391,12 +419,14 @@ class Operations(llfuse.Operations):
         return self.getattr(inode)
 
     def read(self, fh, offset, length):
+        print("read")
         data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
         if data is None:
             data = b''
         return data[offset:offset+length]
 
     def write(self, fh, offset, buf):
+        print("write")
         data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
         if data is None:
             data = b''
@@ -407,6 +437,7 @@ class Operations(llfuse.Operations):
         return len(buf)
 
     def release(self, fh):
+        print("release")
         self.inode_open_count[fh] -= 1
 
         if self.inode_open_count[fh] == 0:
