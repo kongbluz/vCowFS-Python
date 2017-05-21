@@ -17,6 +17,9 @@ class RootINode():
         self.slot[count] = DirNode(count, parent)
         return self.slot[count]
 
+    def delInode(self, id):
+        del self.slot[id]
+
     def getInodeByID(self, id):
         return self.slot[id]
 
@@ -56,6 +59,11 @@ class DirNode():
         d = r_inode.addDir(self.id)
         self.fileTable[name] = d.id
         return d
+
+    def rmInode(self, name):
+        id = self.fileTable[name]
+        r_inode.delInode(id)
+        del self.fileTable[name]
 
     def ls(self):
         for file_row in self.fileTable:
