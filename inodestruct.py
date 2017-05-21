@@ -1,4 +1,4 @@
-import time
+from time import time
 
 class RootINode():
     def __init__(self):
@@ -28,10 +28,13 @@ class Inode():
         self.id = id
         self.permission = '777'
         self.type = None
-        self.c_time = int(time.time())
+        self.c_time = int(time())
 
     def pms_str(self):
         return 'rwxrwxrwx'
+
+    def __str__(self):
+        return str(self.id)
 
 
 class FileNode(Inode):
