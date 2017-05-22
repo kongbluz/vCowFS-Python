@@ -309,19 +309,18 @@ class Operations(llfuse.Operations):
         log.debug("setattr")
         if fields.update_size:
             n = r_inode.getInodeByID(inode)
-            data = n.data
+            data = n.read()
             # data = self.get_row('SELECT data FROM inodes WHERE id=?', (inode,))[0]
-            if data is None:
-                data = b''
             if len(data) < attr.st_size:
-                data = data + b'\0' * (attr.st_size - len(data))
+                data = data + b'\0' * (attr.st_size - n.size)
             else:
                 data = data[:attr.st_size]
+            print("********************"+data)
             n.write(buffer(str.encode(data)))
 
         if fields.update_mode:
             log.debug("********** permission : " + str(attr.st_mode))
-            r_inode.getInodeByID(inode).mode = attr.st_mode
+            r_inode.getInodeByID(inode).chmod(attr.st_mode)
 
         if fields.update_uid:
             r_inode.getInodeByID(inode).uid = attr.st_uid
@@ -419,10 +418,10 @@ class Operations(llfuse.Operations):
         data = fileInode.read()
 
         print("strrrrrrrrrr ="+data)
-        dataByte = str.encode(data)
+        dataByte = str.encode(data[2:len(data)-3])
         print("dataByte =")
         print(dataByte)
-        returnData = dataByte[offset:offset+length]
+        returnData = dataByte[offset:offset+length+1]
         print("returnData =")
         print(returnData)
 
@@ -452,10 +451,11 @@ class Operations(llfuse.Operations):
         lengthdata = len(dataStr)
         log.debug("lengthdata == "+str(lengthdata))
         byteoffset = 0
-        fileInode.write(dataStr)
+        fileInode.write(data)
         print("data in fileInode = = = = = = =")
         pp.pprint(datablockT.slot)
-
+        print("==================== data ==================")
+        print(data)
         fileInode.size = lengthdata
         return len(buf)
 

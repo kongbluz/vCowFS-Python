@@ -44,6 +44,7 @@ class Inode():
         return str(self.id)
 
     def chmod(self, n_mode):
+        self.ctime_ns = int(time() * 1e9)
         self.mode = n_mode
 
 
@@ -57,6 +58,8 @@ class FileNode(Inode):
         self.size = 0
 
     def write(self, n_data):
+        self.atime_ns = int(time() * 1e9)
+        self.mtime_ns = int(time() * 1e9)
         BLOCKSIZE = 128
         for x in self.data:
             datablockT.delDatablock(x)
@@ -68,6 +71,7 @@ class FileNode(Inode):
             n_data = n_data[BLOCKSIZE:]
 
     def read(self):
+        self.atime_ns = int(time() * 1e9)
         data = ""
         for i in self.data:
             data += datablockT.read(i)
@@ -75,7 +79,6 @@ class FileNode(Inode):
 
     def getNlink(self):
         return 0
-
 
 class DirNode(Inode):
     def __init__(self, id, parent):
