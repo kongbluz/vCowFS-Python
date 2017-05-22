@@ -44,8 +44,6 @@ import logging
 from collections import defaultdict
 from llfuse import FUSEError
 from argparse import ArgumentParser
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
 
 try:
     import faulthandler
@@ -258,17 +256,8 @@ class Operations(llfuse.Operations):
         return self._create(inode_p, name, mode, ctx, target=target)
 
     def rename(self, inode_p_old, name_old, inode_p_new, name_new, ctx):
-        log.debug("rename {} -> {}".format(name_old, name_new))
-        log.debug("Inode old[{}] new[{}]".format(inode_p_old, inode_p_new))
+        log.debug("rename")
         entry_old = self.lookup(inode_p_old, name_old)
-
-        odir = r_inode.getInodeByID(inode_p_old)
-        ndir = r_inode.getInodeByID(inode_p_new)
-
-        print("$$$$$$$$$$$  OLD")
-        pp.pprint(odir.fileTable)
-        print("$$$$$$$$$$$  NEW")
-        pp.pprint(ndir.fileTable)
 
         try:
             entry_new = self.lookup(inode_p_new, name_new)
@@ -283,14 +272,9 @@ class Operations(llfuse.Operations):
             self._replace(inode_p_old, name_old, inode_p_new, name_new,
                           entry_old, entry_new)
         else:
-            nid = odir.fileTable[name_old.decode("utf-8")]
-            odir.rmInodeTable(name_old.decode("utf-8"))
-            ndir.addInodeTable(name_new.decode("utf-8"), nid)
-
-        print("XXXXXXXXXXXX  OLD")
-        pp.pprint(odir.fileTable)
-        print("XXXXXXXXXXXX  NEW")
-        pp.pprint(ndir.fileTable)
+            self.cursor.execute("UPDATE contents SET name=?, parent_inode=? WHERE name=? "
+                                "AND parent_inode=?", (name_new, inode_p_new,
+                                                       name_old, inode_p_old))
 
     def _replace(self, inode_p_old, name_old, inode_p_new, name_new,
                  entry_old, entry_new):
@@ -334,30 +318,21 @@ class Operations(llfuse.Operations):
             self.cursor.execute('UPDATE inodes SET data=?, size=? WHERE id=?',
                                 (buffer(data), attr.st_size, inode))
         if fields.update_mode:
-            # self.cursor.execute('UPDATE inodes SET mode=? WHERE id=?',
-            #                     (attr.st_mode, inode))
-            #
             log.debug("********** permission : " + str(attr.st_mode))
             r_inode.getInodeByID(inode).mode = attr.st_mode
 
         if fields.update_uid:
-            # self.cursor.execute('UPDATE inodes SET uid=? WHERE id=?',
-            #                     (attr.st_uid, inode))
             r_inode.getInodeByID(inode).uid = attr.st_uid
 
         if fields.update_gid:
-            # self.cursor.execute('UPDATE inodes SET gid=? WHERE id=?',
-            #                     (attr.st_gid, inode))
             r_inode.getInodeByID(inode).gid = attr.st_gid
 
         if fields.update_atime:
-            self.cursor.execute('UPDATE inodes SET atime_ns=? WHERE id=?',
-                                (attr.st_atime_ns, inode))
+            r_inode.getInodeByID(inode).atime_ns = attr.st_atime_ns
 
         if fields.update_mtime:
-            self.cursor.execute('UPDATE inodes SET mtime_ns=? WHERE id=?',
-                                (attr.st_mtime_ns, inode))
-
+            r_inode.getInodeByID(inode).st_mtime_ns = attr.mtime_ns
+            
         return self.getattr(inode)
 
     def mknod(self, inode_p, name, mode, rdev, ctx):
