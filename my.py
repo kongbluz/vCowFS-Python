@@ -191,7 +191,11 @@ class Operations(llfuse.Operations):
         entry.st_uid = row.uid
         entry.st_gid = row.gid
         entry.st_rdev = 0
-        entry.st_size = 0
+
+        if row.type == 'file':
+             entry.st_size = len(row.read())
+        else:
+             entry.st_size = 0        
 
         entry.st_blksize = 512
         entry.st_blocks = 1
@@ -347,6 +351,10 @@ class Operations(llfuse.Operations):
     def mkdir(self, inode_p, name, mode, ctx=None):
         log.debug("mkdir")
         x = r_inode.getInodeByID(inode_p).addDir(name.decode("utf-8"))
+
+        if name.decode("utf-8") == 'archive' :
+              x.isAchive = True
+
         return self.getattr(x.id)
 
     def statfs(self, ctx):
@@ -489,15 +497,32 @@ def threadCountDown(filename,inode_parent):
     print('end ')
     print(filename)
 
-    x = r_inode.getInodeByID(inode_parent)
-    print(x.fileTable)
-    if 'archive' in x.fileTable  :         
+    parentArchiveInode = r_inode.getInodeByID(inode_parent)
+    
+    if 'archive' in parentArchiveInode.fileTable  :         
          print("yes")
     else:
          operations = Operations()
          operations.mkdir(inode_parent, b'archive' , 0)
-         archiveInode = x.fileTable['archive']
-         operations.create(archiveInode, filename , 0, 0)
+         archiveInodeNumber = parentArchiveInode.fileTable['archive']
+
+         operations.create(archiveInodeNumber, filename , 0, 0)
+         
+         ### read
+         fileOriginalInodeNum = parentArchiveInode.fileTable[ filename.decode("utf-8") ]
+         fileOriginalInode = r_inode.getInodeByID(fileOriginalInodeNum)
+         
+
+         data = operations.read(fileOriginalInodeNum, 0, len(fileOriginalInode.read() ))
+         print("data----")
+         print(data)
+
+         #### write
+         archiveInode = r_inode.getInodeByID(archiveInodeNumber)
+         desFileInodeNumber = archiveInode.fileTable[ filename.decode("utf-8") ]
+
+         operations.write(desFileInodeNumber, 0, data)
+
          print("no")
     print("finish")
     return 
