@@ -51,12 +51,13 @@ class FileNode(Inode):
     def __init__(self, id):
         super().__init__(id)
         self.type = 'file'
-        self.data = ''
+        self.data = []
         self.mode = 33279
         self.fileTable = None
+        self.size = 0
 
     def write(self, data):
-        self.data = data
+        self.data[0] = data
 
     def read(self):
         return self.data
@@ -105,5 +106,26 @@ class DirNode(Inode):
     def getNlink(self):
         return len(self.fileTable)
 
+class DataTable():
+    def __init__(self):
+        self.slot = {}
+        self.count = -1
+
+    def addDatablock(self, data):
+        self.count += 1
+        count = self.count
+        self.slot[count] = data
+        return self.count
+
+    def delDatablock(self, id):
+        del self.slot[id]
+
+    def read(self, id):
+        return self.slot[id]
+
+    def write(self, id, data):
+        self.slot[id] = data
+
 r_inode = RootINode()
+datablockT = DataTable()
 rootdir = r_inode.addDir(None)
