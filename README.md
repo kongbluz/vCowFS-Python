@@ -65,7 +65,7 @@ install it
 # Run !!
 
 ```
-  $ python3 vcowfs.py storage.img tmp 15
+  $ python3 vcowfs.py storage.img tmp -t 15
 ```
 
 # Group Member
