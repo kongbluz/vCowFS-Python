@@ -260,6 +260,8 @@ class Operations(llfuse.Operations):
     def rename(self, inode_p_old, name_old, inode_p_new, name_new, ctx):
         log.debug("rename")
         entry_old = self.lookup(inode_p_old, name_old)
+        odir = r_inode.getInodeByID(inode_p_old)
+        ndir = r_inode.getInodeByID(inode_p_new)
 
         try:
             entry_new = self.lookup(inode_p_new, name_new)
@@ -274,9 +276,9 @@ class Operations(llfuse.Operations):
             self._replace(inode_p_old, name_old, inode_p_new, name_new,
                           entry_old, entry_new)
         else:
-            self.cursor.execute("UPDATE contents SET name=?, parent_inode=? WHERE name=? "
-                                "AND parent_inode=?", (name_new, inode_p_new,
-                                                       name_old, inode_p_old))
+            nid = odir.fileTable[name_old.decode("utf-8")]
+            odir.rmInodeTable(name_old.decode("utf-8"))
+            ndir.addInodeTable(name_new.decode("utf-8"), nid)
 
     def _replace(self, inode_p_old, name_old, inode_p_new, name_new,
                  entry_old, entry_new):
