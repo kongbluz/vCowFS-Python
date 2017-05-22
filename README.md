@@ -7,23 +7,19 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 | ------------- |:-------------:|
 | :x:                    | On-time submission |
 | :heavy_check_mark:     | Compile an build |
-| :x:                    | CoW FS Design |
-| :x:                    | Versioning Design |
-| :x:                    | Mount/Unmount FS |
-| :x:                    | Open/create/close/delete/truncate a file |
+| :heavy_check_mark:                    | CoW FS Design |
+| :heavy_check_mark:                    | Versioning Design |
+| :heavy_check_mark:                    | Mount/Unmount FS |
+| :heavy_check_mark:                    | Open/create/close/delete/truncate a file |
 | :heavy_check_mark:     | Create/remove/rename/delete a directory |
 | :heavy_check_mark:     | Chmod/chown/chgrp a file or directory |
-| :x:                    | Listing file and directory with name, size, date, owner |
-| :x:                    | Listing file and directory with last modified date and time |
+| :heavy_check_mark:                    | Listing file and directory with name, size, date, owner |
+| :heavy_check_mark:                    | Listing file and directory with last modified date and time |
 | :heavy_check_mark:     | Reading a file |
 | :x:                    | Writing and fsync a file |
-| :x:                    | Auto-versioning a file |
-| :x:                    | Retrieve an old-version of a file |
-| :x:                    | Retrieve the file on re-mounting |
-| :x:                    | getattr(stat) |
-| :heavy_check_mark:     | mkdir |
-| :heavy_check_mark:     | rmdir |
-| :heavy_check_mark:     | cd |
+| :heavy_check_mark:                    | Auto-versioning a file |
+| :heavy_check_mark:                    | Retrieve an old-version of a file |
+| :heavy_check_mark:                    | Retrieve the file on re-mounting |
 
 # Getting Started
 ### Install
