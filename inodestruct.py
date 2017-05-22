@@ -29,9 +29,9 @@ class Inode():
         self.id = id
         self.mode = 16877
         self.type = None
-        self.atime_ns = int(time())
-        self.mtime_ns = int(time())
-        self.ctime_ns = int(time())
+        self.atime_ns = int(time() * 1e9)
+        self.mtime_ns = int(time() * 1e9)
+        self.ctime_ns = int(time() * 1e9)
 
     def pms_str(self):
         return 'rwxrwxrwx'
