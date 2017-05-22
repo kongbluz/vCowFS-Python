@@ -239,7 +239,7 @@ class Operations(llfuse.Operations):
 
         log.debug("delete from inode# : "+str(inode_p))
         log.debug("delete inode# : "+str(entry.st_ino))
-        r_inode.getInodeByID(inode_p).rmInode(name = name)
+        r_inode.getInodeByID(inode_p).rmInode(name = name.decode("utf-8"))
 
     def symlink(self, inode_p, name, target, ctx):
         log.debug("symlink")
@@ -338,7 +338,7 @@ class Operations(llfuse.Operations):
 
     def mkdir(self, inode_p, name, mode, ctx):
         log.debug("mkdir")
-        x = r_inode.getInodeByID(inode_p).addDir(name)
+        x = r_inode.getInodeByID(inode_p).addDir(name.decode("utf-8"))
         return self.getattr(x.id)
 
     def statfs(self, ctx):
