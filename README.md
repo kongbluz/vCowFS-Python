@@ -5,9 +5,22 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 
 | Implemented?        | Commmand           |
 | ------------- |:-------------:|
+| :x:                    | getattr(stat) |
 | :heavy_check_mark:     | mkdir |
 | :heavy_check_mark:     | rmdir |
 | :heavy_check_mark:     | cd | 
+| :x:                    | create file (mknod) |
+| :x:                    | rename |
+| :x:                    | delete file (unlink) |
+| :x:                    | chmod |
+| :x:                    | chown |
+| :x:                    | change file size truncate |
+| :x:                    | open file |
+| :x:                    | read file |
+| :x:                    | write file |
+| :x:                    | release file |
+| :x:                    | fsync |
+| :x:                    | fsyncdir |
 | :x:     | centered      |
 
 # Getting Started
