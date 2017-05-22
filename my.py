@@ -44,6 +44,8 @@ import logging
 from collections import defaultdict
 from llfuse import FUSEError
 from argparse import ArgumentParser
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 try:
     import faulthandler
@@ -332,7 +334,7 @@ class Operations(llfuse.Operations):
 
         if fields.update_mtime:
             r_inode.getInodeByID(inode).st_mtime_ns = attr.mtime_ns
-            
+
         return self.getattr(inode)
 
     def mknod(self, inode_p, name, mode, rdev, ctx):
