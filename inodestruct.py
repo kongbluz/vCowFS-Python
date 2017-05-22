@@ -57,10 +57,21 @@ class FileNode(Inode):
         self.size = 0
 
     def write(self, n_data):
-        datablockT.write(self.data[0], n_data)
+        BLOCKSIZE = 128
+        for x in self.data:
+            datablockT.delDatablock(x)
+        self.data = []
+        self.size = len(n_data)
+        while len(n_data) > 0:
+            print(len(n_data))
+            self.data.append(datablockT.addDatablock(n_data[:BLOCKSIZE]))
+            n_data = n_data[BLOCKSIZE:]
 
     def read(self):
-        return self.data
+        data = ""
+        for i in self.data:
+            data += datablockT.read(i)
+        return data
 
     def getNlink(self):
         return 0
