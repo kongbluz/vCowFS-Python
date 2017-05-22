@@ -1,5 +1,8 @@
 import llfuse
 import os
+import pprint
+
+pp = pprint.PrettyPrinter(indent=4)
 
 from time import time
 
@@ -36,7 +39,7 @@ class Inode():
         self.atime_ns = int(time() * 1e9)
         self.mtime_ns = int(time() * 1e9)
         self.ctime_ns = int(time() * 1e9)
-        
+
 
     def pms_str(self):
         return 'rwxrwxrwx'
@@ -53,7 +56,7 @@ class FileNode(Inode):
     def __init__(self, id):
         super().__init__(id)
         self.type = 'file'
-        self.data = [datablockT.addDatablock("")]
+        self.data = []
         self.mode = 33279
         self.fileTable = None
         self.size = 0
@@ -74,9 +77,9 @@ class FileNode(Inode):
 
     def read(self):
         self.atime_ns = int(time() * 1e9)
-        data = ""
+        data = bytearray()
         for i in self.data:
-            data += datablockT.read(i)
+            data += datablockT.read(str(i))
         return data
 
     def getNlink(self):
@@ -134,16 +137,15 @@ class DirNode(Inode):
 class DataTable():
     def __init__(self):
         self.slot = {}
-        self.count = -1
+        self.count = 0
 
     def addDatablock(self, data):
         self.count += 1
-        count = self.count
-        self.slot[count] = str(data)
+        self.slot[str(self.count)] = data
         return self.count
 
     def delDatablock(self, id):
-        del self.slot[id]
+        del self.slot[str(id)]
 
     def read(self, id):
         return self.slot[id]

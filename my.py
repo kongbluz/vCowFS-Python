@@ -58,7 +58,7 @@ class Operations(llfuse.Operations):
         self.inode_open_count = defaultdict(int)
         self.dirPresent = rootdir.id
         self.init_tables()
-    
+
 
     def init_tables(self):
         log.debug("init_tables")
@@ -283,11 +283,12 @@ class Operations(llfuse.Operations):
             n = r_inode.getInodeByID(inode)
             data = n.read()
             if len(data) < attr.st_size:
-                data = data + b'\0'.decode("utf-8") * (attr.st_size - len(data))
+                data = data + b'\0' * (attr.st_size - len(data))
             else:
                 data = data[:attr.st_size]
-            print("********************" + data)
-            n.write(buffer(str.encode(data)))
+            print("********************" + data.decode("utf-8"))
+            n.write(data)
+
 
         if fields.update_mode:
             log.debug("********** permission : " + str(attr.st_mode))
@@ -366,59 +367,23 @@ class Operations(llfuse.Operations):
         return (x.id,self.getattr(x.id))
 
     def read(self, fh, offset, length):
-        log.debug("read")
-        fileInode = r_inode.getInodeByID(fh)
-
-        print("offset "+str(offset))
-        print("length =="+str(length))
-
-        data = fileInode.read()
-
-        print("strrrrrrrrrr ="+data)
-        dataByte = str.encode(data[2:len(data)-3])
-        print("dataByte =")
-        print(dataByte)
-        returnData = dataByte[offset:offset+length+1]
-        print("returnData =")
-        print(returnData)
-
-        return returnData
-
-
+        data = r_inode.getInodeByID(fh).read()
+        if data is None:
+            data = b''
+        return data
 
     def write(self, fh, offset, buf):
-        log.debug("write")
-        # data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
-        fileInode = r_inode.getInodeByID(fh)
-        data = ""
-        print("data id in fileInode")
-        pp.pprint(fileInode.read())
-        print("data id in fileInode")
-        pp.pprint(datablockT.slot)
-        data = fileInode.read()
-        # data = b'test worked!'
-        data = str.encode(data)
+        data = r_inode.getInodeByID(fh).read()
+        if data is None:
+            data = b''
         data = data[:offset] + buf + data[offset+len(buf):]
-        dataStr = data.decode("utf-8")
-
-        log.debug("offset "+str(offset))
-        log.debug("buf ==")
-        log.debug(buf)
-        log.debug("strrrrrrrrrr ="+dataStr)
-        lengthdata = len(dataStr)
-        log.debug("lengthdata == "+str(lengthdata))
-        byteoffset = 0
-        fileInode.write(data)
-        print("data in fileInode = = = = = = =")
-        pp.pprint(datablockT.slot)
-        print("==================== data ==================")
-        print(data)
-        fileInode.size = lengthdata
+        
+        r_inode.getInodeByID(fh).write(data)
 
         print("dirPresent"+str(self.dirPresent) +"fh  "+str(fh))
         dirPresentInode = r_inode.getInodeByID(self.dirPresent)
         byteName = str.encode(str(dirPresentInode.getNameByID(fh)) )
-        
+
         print("dirPresentInode ******************")
         print(dirPresentInode.fileTable)
         threading.Thread(target=threadCountDown, args=(byteName,self.dirPresent,) ).start()
@@ -462,17 +427,17 @@ def threadCountDown(filename,inode_parent):
     if 'archive' in parentArchiveInode.fileTable  :
          print("yes")
     else:
-         print("no")         
+         print("no")
          operations.mkdir(inode_parent, b'archive' , 0)
 
 
-    
+
     archiveInodeNumber = parentArchiveInode.fileTable['archive']
-    
-    
+
+
     dirPresentInode = r_inode.getInodeByID(inode_parent)
     print(dirPresentInode.fileTable)
-   
+
     print("parentArchiveInode.fileTable ++++++++++")
     print(parentArchiveInode.fileTable)
     print(filename.decode("utf-8"))
@@ -500,7 +465,7 @@ def threadCountDown(filename,inode_parent):
 
          operations.write(desFileInodeNumber, 0, data)
 
-         
+
     print("finish")
     return
 
