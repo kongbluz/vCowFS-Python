@@ -1,19 +1,16 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 tmpfs.py - Example file system for Python-LLFUSE.
-
 This file system stores all data in memory. It is compatible with both Python
 2.x and 3.x.
-
 Copyright © 2013 Nikolaus Rath <Nikolaus.org>
-
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to
 use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
 the Software, and to permit persons to whom the Software is furnished to do so.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
 FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -35,7 +32,6 @@ if (os.path.exists(os.path.join(basedir, 'setup.py')) and
     sys.path.append(os.path.join(basedir, 'src'))
 
 import threading
-
 import llfuse
 from inodestruct import *
 import errno
@@ -70,12 +66,10 @@ else:
 
 class Operations(llfuse.Operations):
     '''An example filesystem that stores all data in memory
-
     This is a very simple implementation with terrible performance.
     Don't try to store significant amounts of data. Also, there are
     some other flaws that have not been fixed to keep the code easier
     to understand:
-
     * atime, mtime and ctime are not updated
     * generation numbers are not supported
     '''
@@ -89,7 +83,6 @@ class Operations(llfuse.Operations):
         self.cursor = self.db.cursor()
         self.inode_open_count = defaultdict(int)
         self.init_tables()
-        self.threads = []
 
     def init_tables(self):
         log.debug("init_tables")
@@ -117,7 +110,6 @@ class Operations(llfuse.Operations):
             name      BLOB(256) NOT NULL,
             inode     INT NOT NULL REFERENCES inodes(id),
             parent_inode INT NOT NULL REFERENCES inodes(id),
-
             UNIQUE (name, parent_inode)
         )""")
 
@@ -191,11 +183,10 @@ class Operations(llfuse.Operations):
         entry.st_uid = row.uid
         entry.st_gid = row.gid
         entry.st_rdev = 0
-
-        if row.type == 'file':
-             entry.st_size = len(row.read())
+        if row.type == 'dir':
+            entry.st_size = 0
         else:
-             entry.st_size = 0        
+            entry.st_size = row.size
 
         entry.st_blksize = 512
         entry.st_blocks = 1
@@ -267,6 +258,8 @@ class Operations(llfuse.Operations):
     def rename(self, inode_p_old, name_old, inode_p_new, name_new, ctx):
         log.debug("rename")
         entry_old = self.lookup(inode_p_old, name_old)
+        odir = r_inode.getInodeByID(inode_p_old)
+        ndir = r_inode.getInodeByID(inode_p_new)
 
         try:
             entry_new = self.lookup(inode_p_new, name_new)
@@ -281,9 +274,9 @@ class Operations(llfuse.Operations):
             self._replace(inode_p_old, name_old, inode_p_new, name_new,
                           entry_old, entry_new)
         else:
-            self.cursor.execute("UPDATE contents SET name=?, parent_inode=? WHERE name=? "
-                                "AND parent_inode=?", (name_new, inode_p_new,
-                                                       name_old, inode_p_old))
+            nid = odir.fileTable[name_old.decode("utf-8")]
+            odir.rmInodeTable(name_old.decode("utf-8"))
+            ndir.addInodeTable(name_new.decode("utf-8"), nid)
 
     def _replace(self, inode_p_old, name_old, inode_p_new, name_new,
                  entry_old, entry_new):
@@ -317,15 +310,17 @@ class Operations(llfuse.Operations):
     def setattr(self, inode, attr, fields, fh, ctx):
         log.debug("setattr")
         if fields.update_size:
-            data = self.get_row('SELECT data FROM inodes WHERE id=?', (inode,))[0]
+            n = r_inode.getInodeByID(inode)
+            data = n.data
+            # data = self.get_row('SELECT data FROM inodes WHERE id=?', (inode,))[0]
             if data is None:
                 data = b''
             if len(data) < attr.st_size:
                 data = data + b'\0' * (attr.st_size - len(data))
             else:
                 data = data[:attr.st_size]
-            self.cursor.execute('UPDATE inodes SET data=?, size=? WHERE id=?',
-                                (buffer(data), attr.st_size, inode))
+            n.write(buffer(str.encode(data)))
+
         if fields.update_mode:
             log.debug("********** permission : " + str(attr.st_mode))
             r_inode.getInodeByID(inode).mode = attr.st_mode
@@ -390,57 +385,31 @@ class Operations(llfuse.Operations):
         # Yeah, could be a function and has unused arguments
         #pylint: disable=R0201,W0613
         return True
-    
-           
 
     def create(self, inode_parent, name, mode, flags, ctx=None):
         log.debug("create")
         #pylint: disable=W0612
-
-        x = r_inode.getInodeByID(inode_parent)        
+        x = r_inode.getInodeByID(inode_parent)
         print("inode_parent "+str(inode_parent));
 
         if(x.isAchive == False):
             threading.Thread(target=threadCountDown, args=(name,inode_parent,) ).start()
-            #self.threads.append(t)
-            #t.start()
 
         x = r_inode.getInodeByID(inode_parent).addFile(name.decode("utf-8"))
         return (x.id,self.getattr(x.id))
 
-        
-
-    def _create(self, inode_p, name, mode, ctx, rdev=0, target=None):
-        log.debug("_create")
-        if self.getattr(inode_p).st_nlink == 0:
-            log.warn('Attempted to create entry %s with unlinked parent %d',
-                     name, inode_p)
-            raise FUSEError(errno.EINVAL)
-
-        now_ns = int(time() * 1e9)
-        self.cursor.execute('INSERT INTO inodes (uid, gid, mode, mtime_ns, atime_ns, '
-                            'ctime_ns, target, rdev) VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
-                            (ctx.uid, ctx.gid, mode, now_ns, now_ns, now_ns, target, rdev))
-
-        inode = self.cursor.lastrowid
-        self.db.execute("INSERT INTO contents(name, inode, parent_inode) VALUES(?,?,?)",
-                        (name, inode, inode_p))
-        return self.getattr(inode)
 
     def read(self, fh, offset, length):
         log.debug("read")
         fileInode = r_inode.getInodeByID(fh)
-        data = fileInode.read()
 
         print("offset "+str(offset))
         print("length =="+str(length))
+
+        data = fileInode.read()
+
         print("strrrrrrrrrr ="+data)
-
-        if data is None:
-            data = ''
-
         dataByte = str.encode(data)
-
         print("dataByte =")
         print(dataByte)
         returnData = dataByte[offset:offset+length]
@@ -449,24 +418,38 @@ class Operations(llfuse.Operations):
 
         return returnData
 
+
+
     def write(self, fh, offset, buf):
         log.debug("write")
         #data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
-        fileInode = r_inode.getInodeByID(fh)        
-        data = b''
+        fileInode = r_inode.getInodeByID(fh)
+        data = ""
+        print("data id in fileInode")
+        pp.pprint(fileInode.read())
+        print("data id in fileInode")
+        pp.pprint(datablockT.slot)
+        data = fileInode.read()
+        # data = b'test worked!'
+        data = str.encode(data)
         data = data[:offset] + buf + data[offset+len(buf):]
-        dataStr = data.decode("utf-8") 
+        dataStr = data.decode("utf-8")
 
-        print("offset "+str(offset))
-        print("buf ==")
-        print(buf)
-        print("strrrrrrrrrr ="+dataStr)
-        
-        fileInode.write(dataStr);
+        log.debug("offset "+str(offset))
+        log.debug("buf ==")
+        log.debug(buf)
+        log.debug("strrrrrrrrrr ="+dataStr)
+        lengthdata = len(dataStr)
+        log.debug("lengthdata == "+str(lengthdata))
+        byteoffset = 0
+        fileInode.write(dataStr)
+        print("data in fileInode = = = = = = =")
+        pp.pprint(datablockT.slot)
+
+        fileInode.size = lengthdata
         return len(buf)
 
-   
-   
+
 
 class NoUniqueValueError(Exception):
     def __str__(self):
@@ -491,15 +474,15 @@ def init_logging(debug=False):
         root_logger.setLevel(logging.INFO)
     root_logger.addHandler(handler)
 
-def threadCountDown(filename,inode_parent):        
+def threadCountDown(filename,inode_parent):
     print('create thread')
     sleep(5)
     print('end ')
     print(filename)
 
     parentArchiveInode = r_inode.getInodeByID(inode_parent)
-    
-    if 'archive' in parentArchiveInode.fileTable  :         
+
+    if 'archive' in parentArchiveInode.fileTable  :
          print("yes")
     else:
          operations = Operations()
@@ -507,11 +490,11 @@ def threadCountDown(filename,inode_parent):
          archiveInodeNumber = parentArchiveInode.fileTable['archive']
 
          operations.create(archiveInodeNumber, filename , 0, 0)
-         
+
          ### read
          fileOriginalInodeNum = parentArchiveInode.fileTable[ filename.decode("utf-8") ]
          fileOriginalInode = r_inode.getInodeByID(fileOriginalInodeNum)
-         
+
 
          data = operations.read(fileOriginalInodeNum, 0, len(fileOriginalInode.read() ))
          print("data----")
@@ -525,7 +508,7 @@ def threadCountDown(filename,inode_parent):
 
          print("no")
     print("finish")
-    return 
+    return
 
 def parse_args():
     '''Parse command line'''
