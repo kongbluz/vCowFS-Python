@@ -1,4 +1,6 @@
 import llfuse
+import os
+
 from time import time
 
 class RootINode():
@@ -28,6 +30,8 @@ class Inode():
     def __init__(self, id):
         self.id = id
         self.mode = 16877
+        self.gid = os.getgid()
+        self.uid = os.getuid()
         self.type = None
         self.atime_ns = int(time() * 1e9)
         self.mtime_ns = int(time() * 1e9)
