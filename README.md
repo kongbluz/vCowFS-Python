@@ -6,7 +6,8 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 | Implemented?        | Commmand           |
 | ------------- |:-------------:|
 | :heavy_check_mark:     | mkdir |
-| :heavy_check_mark:     | cd |
+| :heavy_check_mark:     | rmdir |
+| :heavy_check_mark:     | cd | 
 | :x:     | centered      |
 
 # Getting Started
