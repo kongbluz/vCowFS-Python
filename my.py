@@ -351,7 +351,7 @@ class Operations(llfuse.Operations):
         log.debug("access")
         # Yeah, could be a function and has unused arguments
         # pylint: disable=R0201,W0613
-        dirPresent = inode
+        self.dirPresent = inode
         return True
 
     def create(self, inode_parent, name, mode, flags, ctx=None):
@@ -377,7 +377,7 @@ class Operations(llfuse.Operations):
         if data is None:
             data = b''
         data = data[:offset] + buf + data[offset+len(buf):]
-        
+
         r_inode.getInodeByID(fh).write(data)
 
         print("dirPresent"+str(self.dirPresent) +"fh  "+str(fh))
