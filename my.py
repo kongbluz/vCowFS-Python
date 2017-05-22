@@ -364,7 +364,7 @@ class Operations(llfuse.Operations):
         log.debug("open")
         # Yeah, unused arguments
         #pylint: disable=W0613
-        self.inode_open_count[inode] += 1
+        #self.inode_open_count[inode] += 1
 
         # Use inodes as a file handles
         return inode
@@ -378,9 +378,14 @@ class Operations(llfuse.Operations):
     def create(self, inode_parent, name, mode, flags, ctx):
         log.debug("create")
         #pylint: disable=W0612
-        entry = self._create(inode_parent, name, mode, ctx)
-        self.inode_open_count[entry.st_ino] += 1
-        return (entry.st_ino, entry)
+
+        x = r_inode.getInodeByID(inode_parent).addFile(name.decode("utf-8"))
+        return (x.id,self.getattr(x.id))
+
+        #entry = self._create(inode_parent, name, mode, ctx)
+        
+        #self.inode_open_count[entry.st_ino] += 1
+        #return (entry.st_ino, entry)
 
     def _create(self, inode_p, name, mode, ctx, rdev=0, target=None):
         log.debug("_create")
@@ -401,30 +406,43 @@ class Operations(llfuse.Operations):
 
     def read(self, fh, offset, length):
         log.debug("read")
-        data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
+        fileInode = r_inode.getInodeByID(fh)
+        data = fileInode.read()
+
+        print("offset "+str(offset))
+        print("length =="+str(length))
+        print("strrrrrrrrrr ="+data)
+
         if data is None:
-            data = b''
-        return data[offset:offset+length]
+            data = ''
+
+        dataByte = str.encode(data)
+
+        print("dataByte =")
+        print(dataByte)
+        returnData = dataByte[offset:offset+length]
+        print("returnData =")
+        print(returnData)
+
+        return returnData
 
     def write(self, fh, offset, buf):
         log.debug("write")
-        data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
-        if data is None:
-            data = b''
+        #data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
+        fileInode = r_inode.getInodeByID(fh)        
+        data = b''
         data = data[:offset] + buf + data[offset+len(buf):]
+        dataStr = data.decode("utf-8") 
 
-        self.cursor.execute('UPDATE inodes SET data=?, size=? WHERE id=?',
-                            (buffer(data), len(data), fh))
+        print("offset "+str(offset))
+        print("buf ==")
+        print(buf)
+        print("strrrrrrrrrr ="+dataStr)
+        
+        fileInode.write(dataStr);
         return len(buf)
 
-    def release(self, fh):
-        log.debug("release")
-        self.inode_open_count[fh] -= 1
-
-        if self.inode_open_count[fh] == 0:
-            del self.inode_open_count[fh]
-            if self.getattr(fh).st_nlink == 0:
-                self.cursor.execute("DELETE FROM inodes WHERE id=?", (fh,))
+   
 
 class NoUniqueValueError(Exception):
     def __str__(self):
