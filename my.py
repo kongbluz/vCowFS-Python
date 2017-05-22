@@ -1,23 +1,5 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-'''
-tmpfs.py - Example file system for Python-LLFUSE.
-This file system stores all data in memory. It is compatible with both Python
-2.x and 3.x.
-Copyright © 2013 Nikolaus Rath <Nikolaus.org>
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-'''
 
 from __future__ import division, print_function, absolute_import
 
@@ -31,11 +13,12 @@ if (os.path.exists(os.path.join(basedir, 'setup.py')) and
     os.path.exists(os.path.join(basedir, 'src', 'llfuse'))):
     sys.path.append(os.path.join(basedir, 'src'))
 
+import threading
 import llfuse
 from inodestruct import *
 import errno
 import stat
-from time import time
+from time import time , sleep
 import sqlite3
 import logging
 from collections import defaultdict
@@ -63,16 +46,8 @@ if sys.version_info[0] == 2:
 else:
     buffer = memoryview
 
-class Operations(llfuse.Operations):
-    '''An example filesystem that stores all data in memory
-    This is a very simple implementation with terrible performance.
-    Don't try to store significant amounts of data. Also, there are
-    some other flaws that have not been fixed to keep the code easier
-    to understand:
-    * atime, mtime and ctime are not updated
-    * generation numbers are not supported
-    '''
 
+class Operations(llfuse.Operations):
 
     def __init__(self):
         super(Operations, self).__init__()
@@ -122,7 +97,6 @@ class Operations(llfuse.Operations):
         self.cursor.execute("INSERT INTO contents (name, parent_inode, inode) VALUES (?,?,?)",
                             (b'..', llfuse.ROOT_INODE, llfuse.ROOT_INODE))
 
-
     def get_row(self, *a, **kw):
         log.debug("get_row")
         self.cursor.execute(*a, **kw)
@@ -139,8 +113,8 @@ class Operations(llfuse.Operations):
         return row
 
     def lookup(self, inode_p, name, ctx=None):
-        log.debug("lookup ++++ named" + name.decode("utf-8") )
-        log.debug(str(inode_p)  +"zzzzz")
+        log.debug("lookup ++++ named" + name.decode("utf-8"))
+        log.debug(str(inode_p) + "zzzzz")
         if name == '.':
             log.debug('look up chioce : 1')
             inode = inode_p
@@ -156,10 +130,10 @@ class Operations(llfuse.Operations):
                 raise(llfuse.FUSEError(errno.ENOENT))
             else:
                 log.debug('look up chioce : 32222222222')
-                inode = r_inode.getInodeByID(inode_p).fileTable[name.decode("utf-8")]
-        log.debug("inode in look up : "  + str(inode))
+                inode = r_inode.getInodeByID(inode_p).fileTable[
+                                             name.decode("utf-8")]
+        log.debug("inode in look up : " + str(inode))
         return self.getattr(inode, ctx)
-
 
     def getattr(self, inode, ctx=None):
         log.debug("getattr")
@@ -171,12 +145,6 @@ class Operations(llfuse.Operations):
         entry.generation = 0
         entry.entry_timeout = 300
         entry.attr_timeout = 300
-        # if row.type == 'file':
-        #     log.debug("is file")
-        #     entry.st_mode = 33279
-        # else:
-        #     log.debug("is dir")
-        #     entry.st_mode = 16877
         entry.st_mode = row.mode
         entry.st_nlink = row.getNlink()
         entry.st_uid = row.uid
@@ -210,16 +178,16 @@ class Operations(llfuse.Operations):
         if off == 0:
             rootz = r_inode.getInodeByID(inode).fileTable
             parent = r_inode.getInodeByID(inode).parent
-            yield  (b".", self.getattr(inode), inode)
+            yield (b".", self.getattr(inode), inode)
             if parent == None:
-                yield  (b"..", self.getattr(inode), inode)
+                yield (b"..", self.getattr(inode), inode)
             else:
-                yield  (b"..", self.getattr(parent), parent)
+                yield (b"..", self.getattr(parent), parent)
             # yield  ("..", self.getattr(rootz[name]), rootz[name])
             for name in rootz:
-                yield  ( str.encode(name), self.getattr(rootz[name]), rootz[name])
+                yield (str.encode(name), self.getattr(rootz[name]), rootz[name])
 
-    def unlink(self, inode_p, name,ctx):
+    def unlink(self, inode_p, name, ctx):
         log.debug("unlink")
         entry = self.lookup(inode_p, name)
 
@@ -239,13 +207,14 @@ class Operations(llfuse.Operations):
 
     def _remove(self, inode_p, name, entry):
         log.debug("_remove")
-        if r_inode.getInodeByID(entry.st_ino).fileTable :
-            log.debug("child of this is : "+str(r_inode.getInodeByID(entry.st_ino).fileTable))
+        if r_inode.getInodeByID(entry.st_ino).fileTable:
+            log.debug("child of this is : " +
+                      str(r_inode.getInodeByID(entry.st_ino).fileTable))
             raise llfuse.FUSEError(errno.ENOTEMPTY)
 
-        log.debug("delete from inode# : "+str(inode_p))
-        log.debug("delete inode# : "+str(entry.st_ino))
-        r_inode.getInodeByID(inode_p).rmInode(name = name.decode("utf-8"))
+        log.debug("delete from inode# : " + str(inode_p))
+        log.debug("delete inode# : " + str(entry.st_ino))
+        r_inode.getInodeByID(inode_p).rmInode(name=name.decode("utf-8"))
 
     def symlink(self, inode_p, name, target, ctx):
         log.debug("symlink")
@@ -290,8 +259,8 @@ class Operations(llfuse.Operations):
                         (name_old, inode_p_old))
 
         if entry_new.st_nlink == 1 and entry_new.st_ino not in self.inode_open_count:
-            self.cursor.execute("DELETE FROM inodes WHERE id=?", (entry_new.st_ino,))
-
+            self.cursor.execute(
+                "DELETE FROM inodes WHERE id=?", (entry_new.st_ino,))
 
     def link(self, inode, new_inode_p, new_name, ctx):
         log.debug("link")
@@ -311,12 +280,13 @@ class Operations(llfuse.Operations):
         if fields.update_size:
             n = r_inode.getInodeByID(inode)
             data = n.read()
-            # data = self.get_row('SELECT data FROM inodes WHERE id=?', (inode,))[0]
+            # data = self.get_row('SELECT data FROM inodes WHERE id=?',
+            # (inode,))[0]
             if len(data) < attr.st_size:
                 data = data + b'\0' * (attr.st_size - n.size)
             else:
                 data = data[:attr.st_size]
-            print("********************"+data)
+            print("********************" + data)
             n.write(buffer(str.encode(data)))
 
         if fields.update_mode:
@@ -341,9 +311,11 @@ class Operations(llfuse.Operations):
         log.debug("mknod")
         return self._create(inode_p, name, mode, ctx, rdev=rdev)
 
-    def mkdir(self, inode_p, name, mode, ctx):
+    def mkdir(self, inode_p, name, mode, ctx=None):
         log.debug("mkdir")
         x = r_inode.getInodeByID(inode_p).addDir(name.decode("utf-8"))
+        if name.decode("utf-8") == 'archive':
+              x.isAchive = True
         return self.getattr(x.id)
 
     def statfs(self, ctx):
@@ -360,7 +332,7 @@ class Operations(llfuse.Operations):
 
         inodes = self.get_row('SELECT COUNT(id) FROM inodes')[0]
         stat_.f_files = inodes
-        stat_.f_ffree = max(inodes , 100)
+        stat_.f_ffree = max(inodes, 100)
         stat_.f_favail = stat_.f_ffree
 
         return stat_
@@ -368,8 +340,8 @@ class Operations(llfuse.Operations):
     def open(self, inode, flags, ctx):
         log.debug("open")
         # Yeah, unused arguments
-        #pylint: disable=W0613
-        #self.inode_open_count[inode] += 1
+        # pylint: disable=W0613
+        # self.inode_open_count[inode] += 1
 
         # Use inodes as a file handles
         return inode
@@ -377,37 +349,20 @@ class Operations(llfuse.Operations):
     def access(self, inode, mode, ctx):
         log.debug("access")
         # Yeah, could be a function and has unused arguments
-        #pylint: disable=R0201,W0613
+        # pylint: disable=R0201,W0613
         return True
 
-    def create(self, inode_parent, name, mode, flags, ctx):
+    def create(self, inode_parent, name, mode, flags, ctx=None):
         log.debug("create")
-        #pylint: disable=W0612
+        # pylint: disable=W0612
+        x = r_inode.getInodeByID(inode_parent)
+        print("inode_parent "+str(inode_parent));
+
+        if(x.isAchive == False):
+            threading.Thread(target=threadCountDown, args=(name,inode_parent,) ).start()
 
         x = r_inode.getInodeByID(inode_parent).addFile(name.decode("utf-8"))
         return (x.id,self.getattr(x.id))
-
-        #entry = self._create(inode_parent, name, mode, ctx)
-
-        #self.inode_open_count[entry.st_ino] += 1
-        #return (entry.st_ino, entry)
-
-    def _create(self, inode_p, name, mode, ctx, rdev=0, target=None):
-        log.debug("_create")
-        if self.getattr(inode_p).st_nlink == 0:
-            log.warn('Attempted to create entry %s with unlinked parent %d',
-                     name, inode_p)
-            raise FUSEError(errno.EINVAL)
-
-        now_ns = int(time() * 1e9)
-        self.cursor.execute('INSERT INTO inodes (uid, gid, mode, mtime_ns, atime_ns, '
-                            'ctime_ns, target, rdev) VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
-                            (ctx.uid, ctx.gid, mode, now_ns, now_ns, now_ns, target, rdev))
-
-        inode = self.cursor.lastrowid
-        self.db.execute("INSERT INTO contents(name, inode, parent_inode) VALUES(?,?,?)",
-                        (name, inode, inode_p))
-        return self.getattr(inode)
 
     def read(self, fh, offset, length):
         log.debug("read")
@@ -432,7 +387,7 @@ class Operations(llfuse.Operations):
 
     def write(self, fh, offset, buf):
         log.debug("write")
-        #data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
+        # data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
         fileInode = r_inode.getInodeByID(fh)
         data = ""
         print("data id in fileInode")
@@ -485,6 +440,33 @@ def init_logging(debug=False):
         root_logger.setLevel(logging.INFO)
     root_logger.addHandler(handler)
 
+def threadCountDown(filename,inode_parent):
+    print('create thread')
+    sleep(5)
+    print('end ')
+    print(filename)
+    parentArchiveInode = r_inode.getInodeByID(inode_parent)
+    if 'archive' in parentArchiveInode.fileTable  :
+         print("yes")
+    else:
+         operations = Operations()
+         operations.mkdir(inode_parent, b'archive' , 0)
+         archiveInodeNumber = parentArchiveInode.fileTable['archive']
+         operations.create(archiveInodeNumber, filename , 0, 0)
+         ### read
+         fileOriginalInodeNum = parentArchiveInode.fileTable[ filename.decode("utf-8") ]
+         fileOriginalInode = r_inode.getInodeByID(fileOriginalInodeNum)
+         data = operations.read(fileOriginalInodeNum, 0, len(fileOriginalInode.read() ))
+         print("data----")
+         print(data)
+         #### write
+         archiveInode = r_inode.getInodeByID(archiveInodeNumber)
+         desFileInodeNumber = archiveInode.fileTable[ filename.decode("utf-8") ]
+         operations.write(desFileInodeNumber, 0, data)
+         print("no")
+         print("finish")
+    return
+
 def parse_args():
     '''Parse command line'''
 
@@ -520,4 +502,4 @@ if __name__ == '__main__':
         llfuse.close(unmount=False)
         raise
 
-    llfuse.close()
+    llfuse.close()
