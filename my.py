@@ -242,9 +242,11 @@ class Operations(llfuse.Operations):
 
     def _remove(self, inode_p, name, entry):
         log.debug("_remove")
-        if r_inode.getInodeByID(entry.st_ino).fileTable :
-            log.debug("child of this is : "+str(r_inode.getInodeByID(entry.st_ino).fileTable))
-            raise llfuse.FUSEError(errno.ENOTEMPTY)
+
+        if r_inode.getInodeByID(entry.st_ino).type == "dir" :
+            if r_inode.getInodeByID(entry.st_ino).fileTable :
+                    log.debug("child of this is : "+str(r_inode.getInodeByID(entry.st_ino).fileTable))
+                    raise llfuse.FUSEError(errno.ENOTEMPTY)
 
         log.debug("delete from inode# : "+str(inode_p))
         log.debug("delete inode# : "+str(entry.st_ino))
