@@ -1,9 +1,10 @@
+import llfuse
 from time import time
 
 class RootINode():
     def __init__(self):
         self.slot = {}
-        self.count = -1
+        self.count = llfuse.ROOT_INODE-1
 
     def addFile(self):
         self.count += 1
