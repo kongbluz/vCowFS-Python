@@ -213,23 +213,21 @@ class Operations(llfuse.Operations):
     def rmdir(self, inode_p, name, ctx):
         log.debug("rmdir")
         entry = self.lookup(inode_p, name)
-
+        log.debug("id in rmdir is : " + str(entry.st_ino))
         if not stat.S_ISDIR(entry.st_mode):
             raise llfuse.FUSEError(errno.ENOTDIR)
 
         self._remove(inode_p, name, entry)
 
     def _remove(self, inode_p, name, entry):
-        log.debug("remove")
-        if self.get_row("SELECT COUNT(inode) FROM contents WHERE parent_inode=?",
-                        (entry.st_ino,))[0] > 0:
+        log.debug("_remove")
+        if r_inode.getInodeByID(entry.st_ino).fileTable :
+            log.debug("child of this is : "+str(r_inode.getInodeByID(entry.st_ino).fileTable))
             raise llfuse.FUSEError(errno.ENOTEMPTY)
 
-        self.cursor.execute("DELETE FROM contents WHERE name=? AND parent_inode=?",
-                        (name, inode_p))
-
-        if entry.st_nlink == 1 and entry.st_ino not in self.inode_open_count:
-            self.cursor.execute("DELETE FROM inodes WHERE id=?", (entry.st_ino,))
+        log.debug("delete from inode# : "+str(inode_p))
+        log.debug("delete inode# : "+str(entry.st_ino))
+        r_inode.getInodeByID(inode_p).rmInode(name = name)
 
     def symlink(self, inode_p, name, target, ctx):
         log.debug("symlink")
