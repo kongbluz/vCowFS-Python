@@ -280,10 +280,8 @@ class Operations(llfuse.Operations):
         if fields.update_size:
             n = r_inode.getInodeByID(inode)
             data = n.read()
-            # data = self.get_row('SELECT data FROM inodes WHERE id=?',
-            # (inode,))[0]
             if len(data) < attr.st_size:
-                data = data + b'\0' * (attr.st_size - n.size)
+                data = data + b'\0'.decode("utf-8") * (attr.st_size - len(data))
             else:
                 data = data[:attr.st_size]
             print("********************" + data)
