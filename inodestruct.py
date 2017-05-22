@@ -27,15 +27,20 @@ class RootINode():
 class Inode():
     def __init__(self, id):
         self.id = id
-        self.permission = '777'
+        self.mode = 16877
         self.type = None
-        self.c_time = int(time())
+        self.atime_ns = int(time())
+        self.mtime_ns = int(time())
+        self.ctime_ns = int(time())
 
     def pms_str(self):
         return 'rwxrwxrwx'
 
     def __str__(self):
         return str(self.id)
+
+    def chmod(self, n_mode):
+        self.mode = n_mode
 
 
 class FileNode(Inode):
@@ -49,6 +54,9 @@ class FileNode(Inode):
 
     def read(self):
         return self.data
+
+    def getNlink(self):
+        return 0
 
 
 class DirNode(Inode):
@@ -80,6 +88,9 @@ class DirNode(Inode):
             print('{}{} {} id: {} time: {}'.format('-' if f.type == 'file' else 'd',
                                          f.pms_str(),
                                          file_row, fid, f.c_time))
+
+    def getNlink(self):
+        return len(self.fileTable)
 
 r_inode = RootINode()
 rootdir = r_inode.addDir(None)
