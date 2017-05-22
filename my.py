@@ -52,6 +52,9 @@ except ImportError:
 else:
     faulthandler.enable()
 
+rootdir.addFile('Fhheeewwwwwww')
+rootdir.addFile('dummmmmmmyyyy')
+rootdir.addDir('myDir')
 log = logging.getLogger()
 
 # For Python 2 + 3 compatibility
@@ -140,7 +143,7 @@ class Operations(llfuse.Operations):
         return row
 
     def lookup(self, inode_p, name, ctx=None):
-        log.debug("lookup ++++")
+        log.debug("lookup ++++ named" + name.decode("utf-8") )
         log.debug(str(inode_p)  +"zzzzz")
         if name == '.':
             log.debug('look up chioce : 1')
@@ -152,10 +155,12 @@ class Operations(llfuse.Operations):
             #
         else:
             log.debug('look up chioce : 3')
-            if name not in r_inode.getInodeByID(inode_p).fileTable:
+            if name.decode("utf-8") not in r_inode.getInodeByID(inode_p).fileTable:
+                log.debug('look up chioce : 31111111111')
                 raise(llfuse.FUSEError(errno.ENOENT))
             else:
-                inode = r_inode.getInodeByID(inode_p).fileTable[name]
+                log.debug('look up chioce : 32222222222')
+                inode = r_inode.getInodeByID(inode_p).fileTable[name.decode("utf-8")]
         log.debug("inode in look up : "  + str(inode))
         return self.getattr(inode, ctx)
 
@@ -200,11 +205,13 @@ class Operations(llfuse.Operations):
         return inode
 
     def readdir(self, inode, off):
-        log.debug("readdir")
+        log.debug("readdir #" + str(inode) + " offff" + str(off))
 
-        rootz = rootdir.fileTable
-        for name in rootz:
-            yield  ( name, self.getattr(rootz[name]), rootz[name])
+        if off == 0:
+            rootz = r_inode.getInodeByID(inode).fileTable
+            count = 0
+            for name in rootz:
+                yield  ( str.encode(name), self.getattr(rootz[name]), rootz[name])
 
     def unlink(self, inode_p, name,ctx):
         log.debug("unlink")
