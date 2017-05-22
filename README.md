@@ -1,6 +1,14 @@
 # Versioning Copy-On-Write File System (vCowFS)
 ### Assignment 2: Versioning Copy-On-Write File System (vCowFS)
 This project was submitted to **Operating System subject, CE KMITL 2016**
+# Task List
+
+| Implemented?        | Commmand           |
+| ------------- |:-------------:|
+| :heavy_check_mark:     | mkdir |
+| :heavy_check_mark:     | cd |
+| :x:     | centered      |
+
 # Getting Started
 ### Install
 
