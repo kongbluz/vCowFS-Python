@@ -2,18 +2,14 @@
 # -*- coding: utf-8 -*-
 '''
 tmpfs.py - Example file system for Python-LLFUSE.
-
 This file system stores all data in memory. It is compatible with both Python
 2.x and 3.x.
-
 Copyright © 2013 Nikolaus Rath <Nikolaus.org>
-
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to
 use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
 the Software, and to permit persons to whom the Software is furnished to do so.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
 FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -68,12 +64,10 @@ else:
 
 class Operations(llfuse.Operations):
     '''An example filesystem that stores all data in memory
-
     This is a very simple implementation with terrible performance.
     Don't try to store significant amounts of data. Also, there are
     some other flaws that have not been fixed to keep the code easier
     to understand:
-
     * atime, mtime and ctime are not updated
     * generation numbers are not supported
     '''
@@ -114,7 +108,6 @@ class Operations(llfuse.Operations):
             name      BLOB(256) NOT NULL,
             inode     INT NOT NULL REFERENCES inodes(id),
             parent_inode INT NOT NULL REFERENCES inodes(id),
-
             UNIQUE (name, parent_inode)
         )""")
 
@@ -188,7 +181,10 @@ class Operations(llfuse.Operations):
         entry.st_uid = row.uid
         entry.st_gid = row.gid
         entry.st_rdev = 0
-        entry.st_size = 0
+        if row.type == 'dir':
+            entry.st_size = 0
+        else:
+            entry.st_size = row.size
 
         entry.st_blksize = 512
         entry.st_blocks = 1
@@ -242,11 +238,9 @@ class Operations(llfuse.Operations):
 
     def _remove(self, inode_p, name, entry):
         log.debug("_remove")
-
-        if r_inode.getInodeByID(entry.st_ino).type == "dir" :
-            if r_inode.getInodeByID(entry.st_ino).fileTable :
-                    log.debug("child of this is : "+str(r_inode.getInodeByID(entry.st_ino).fileTable))
-                    raise llfuse.FUSEError(errno.ENOTEMPTY)
+        if r_inode.getInodeByID(entry.st_ino).fileTable :
+            log.debug("child of this is : "+str(r_inode.getInodeByID(entry.st_ino).fileTable))
+            raise llfuse.FUSEError(errno.ENOTEMPTY)
 
         log.debug("delete from inode# : "+str(inode_p))
         log.debug("delete inode# : "+str(entry.st_ino))
@@ -418,14 +412,14 @@ class Operations(llfuse.Operations):
     def read(self, fh, offset, length):
         log.debug("read")
         fileInode = r_inode.getInodeByID(fh)
-        data = fileInode.read()
 
         print("offset "+str(offset))
         print("length =="+str(length))
+
+        data = fileInode.read()
+
         print("strrrrrrrrrr ="+data)
-
         dataByte = str.encode(data)
-
         print("dataByte =")
         print(dataByte)
         returnData = dataByte[offset:offset+length]
@@ -440,17 +434,29 @@ class Operations(llfuse.Operations):
         log.debug("write")
         #data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
         fileInode = r_inode.getInodeByID(fh)
-        data = str.encode(fileInode.read())
+        data = ""
+        print("data id in fileInode")
+        pp.pprint(fileInode.read())
+        print("data id in fileInode")
+        pp.pprint(datablockT.slot)
+        data = fileInode.read()
         # data = b'test worked!'
+        data = str.encode(data)
         data = data[:offset] + buf + data[offset+len(buf):]
         dataStr = data.decode("utf-8")
 
-        print("offset "+str(offset))
-        print("buf ==")
-        print(buf)
-        print("strrrrrrrrrr ="+dataStr)
+        log.debug("offset "+str(offset))
+        log.debug("buf ==")
+        log.debug(buf)
+        log.debug("strrrrrrrrrr ="+dataStr)
+        lengthdata = len(dataStr)
+        log.debug("lengthdata == "+str(lengthdata))
+        byteoffset = 0
+        fileInode.write(dataStr)
+        print("data in fileInode = = = = = = =")
+        pp.pprint(datablockT.slot)
 
-        fileInode.write(dataStr);
+        fileInode.size = lengthdata
         return len(buf)
 
 
