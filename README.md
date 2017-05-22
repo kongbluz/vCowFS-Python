@@ -8,12 +8,13 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 | :x:                    | getattr(stat) |
 | :heavy_check_mark:     | mkdir |
 | :heavy_check_mark:     | rmdir |
-| :heavy_check_mark:     | cd | 
+| :heavy_check_mark:     | cd |
 | :x:                    | create file (mknod) |
 | :x:                    | rename |
 | :x:                    | delete file (unlink) |
-| :x:                    | chmod |
-| :x:                    | chown |
+| :heavy_check_mark:     | chmod |
+| :heavy_check_mark:     | chown |
+| :heavy_check_mark:     | chgrp |
 | :x:                    | change file size truncate |
 | :x:                    | open file |
 | :x:                    | read file |
