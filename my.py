@@ -175,15 +175,16 @@ class Operations(llfuse.Operations):
         entry.generation = 0
         entry.entry_timeout = 300
         entry.attr_timeout = 300
-        if row.type == 'file':
-            log.debug("is file")
-            entry.st_mode = 33279
-        else:
-            log.debug("is dir")
-            entry.st_mode = 16877
+        # if row.type == 'file':
+        #     log.debug("is file")
+        #     entry.st_mode = 33279
+        # else:
+        #     log.debug("is dir")
+        #     entry.st_mode = 16877
+        entry.st_mode = row.mode
         entry.st_nlink = row.getNlink()
-        entry.st_uid = os.getuid()
-        entry.st_gid = os.getgid()
+        entry.st_uid = row.uid
+        entry.st_gid = row.gid
         entry.st_rdev = 0
         entry.st_size = 0
 
@@ -317,16 +318,21 @@ class Operations(llfuse.Operations):
             self.cursor.execute('UPDATE inodes SET data=?, size=? WHERE id=?',
                                 (buffer(data), attr.st_size, inode))
         if fields.update_mode:
-            self.cursor.execute('UPDATE inodes SET mode=? WHERE id=?',
-                                (attr.st_mode, inode))
+            # self.cursor.execute('UPDATE inodes SET mode=? WHERE id=?',
+            #                     (attr.st_mode, inode))
+            #
+            log.debug("********** permission : " + str(attr.st_mode))
+            r_inode.getInodeByID(inode).mode = attr.st_mode
 
         if fields.update_uid:
-            self.cursor.execute('UPDATE inodes SET uid=? WHERE id=?',
-                                (attr.st_uid, inode))
+            # self.cursor.execute('UPDATE inodes SET uid=? WHERE id=?',
+            #                     (attr.st_uid, inode))
+            r_inode.getInodeByID(inode).uid = attr.st_uid
 
         if fields.update_gid:
-            self.cursor.execute('UPDATE inodes SET gid=? WHERE id=?',
-                                (attr.st_gid, inode))
+            # self.cursor.execute('UPDATE inodes SET gid=? WHERE id=?',
+            #                     (attr.st_gid, inode))
+            r_inode.getInodeByID(inode).gid = attr.st_gid
 
         if fields.update_atime:
             self.cursor.execute('UPDATE inodes SET atime_ns=? WHERE id=?',
