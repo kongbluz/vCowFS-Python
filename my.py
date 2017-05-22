@@ -170,7 +170,12 @@ class Operations(llfuse.Operations):
         entry.generation = 0
         entry.entry_timeout = 300
         entry.attr_timeout = 300
-        entry.st_mode = 16877
+        if row.type == 'file':
+            log.debug("is file")
+            entry.st_mode = 33279
+        else:
+            log.debug("is dir")
+            entry.st_mode = 16877
         entry.st_nlink = len(row.fileTable)
         entry.st_uid = os.getuid()
         entry.st_gid = os.getgid()
