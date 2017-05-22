@@ -5,24 +5,29 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 
 | Implemented?        | Commmand           |
 | ------------- |:-------------:|
+| :x:                    | On-time submission |
+| :heavy_check_mark:                    | Compile an build |
+| :x:                    | CoW FS Design |
+| :x:                    | Versioning Design |
+| :x:                    | Mount/Unmount FS |
+| :x:                    | Open/create/close/delete/truncate a file |
+| :x:                    | Create/remove/rename/delete a directory |
+| :heavy_check_mark:                    | Chmod/chown a file or directory |
+| :x:                    | Listing file and directory with name, size, date, owner |
+| :x:                    | Listing file and directory with last modified date and time |
+| :x:                    | Reading a file |
+| :x:                    | Writing and fsync a file |
+| :x:                    | Auto-versioning a file |
+| :x:                    | Retrieve an old-version of a file |
+| :x:                    | Retrieve the file on re-mounting |
 | :x:                    | getattr(stat) |
 | :heavy_check_mark:     | mkdir |
 | :heavy_check_mark:     | rmdir |
 | :heavy_check_mark:     | cd |
-| :x:                    | create file (mknod) |
-| :x:                    | rename |
-| :x:                    | delete file (unlink) |
 | :heavy_check_mark:     | chmod |
 | :heavy_check_mark:     | chown |
 | :heavy_check_mark:     | chgrp |
-| :x:                    | change file size truncate |
-| :x:                    | open file |
-| :x:                    | read file |
-| :x:                    | write file |
-| :x:                    | release file |
-| :x:                    | fsync |
-| :x:                    | fsyncdir |
-| :x:     | centered      |
+
 
 # Getting Started
 ### Install
