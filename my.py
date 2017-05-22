@@ -176,7 +176,7 @@ class Operations(llfuse.Operations):
         else:
             log.debug("is dir")
             entry.st_mode = 16877
-        entry.st_nlink = len(row.fileTable)
+        entry.st_nlink = row.getNlink()
         entry.st_uid = os.getuid()
         entry.st_gid = os.getgid()
         entry.st_rdev = 0
@@ -184,9 +184,9 @@ class Operations(llfuse.Operations):
 
         entry.st_blksize = 512
         entry.st_blocks = 1
-        entry.st_atime_ns = row.c_time
-        entry.st_mtime_ns = row.c_time
-        entry.st_ctime_ns = row.c_time
+        entry.st_atime_ns = row.atime_ns
+        entry.st_mtime_ns = row.mtime_ns
+        entry.st_ctime_ns = row.ctime_ns
 
         log.debug(entry.st_mode)
         return entry
