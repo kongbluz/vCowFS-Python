@@ -1,4 +1,6 @@
 import llfuse
+import os
+
 from time import time
 
 class RootINode():
@@ -28,10 +30,12 @@ class Inode():
     def __init__(self, id):
         self.id = id
         self.mode = 16877
+        self.gid = os.getgid()
+        self.uid = os.getuid()
         self.type = None
-        self.atime_ns = int(time())
-        self.mtime_ns = int(time())
-        self.ctime_ns = int(time())
+        self.atime_ns = int(time() * 1e9)
+        self.mtime_ns = int(time() * 1e9)
+        self.ctime_ns = int(time() * 1e9)
 
     def pms_str(self):
         return 'rwxrwxrwx'
@@ -68,18 +72,24 @@ class DirNode(Inode):
 
     def addFile(self, name):
         f = r_inode.addFile()
-        self.fileTable[name] = f.id
+        self.addInodeTable(name, f.id)
         return f
 
     def addDir(self, name):
         d = r_inode.addDir(self.id)
-        self.fileTable[name] = d.id
+        self.addInodeTable(name, d.id)
         return d
 
     def rmInode(self, name):
         id = self.fileTable[name]
         r_inode.delInode(id)
         del self.fileTable[name]
+
+    def rmInodeTable(self, name):
+        del self.fileTable[name]
+
+    def addInodeTable(self, name, id):
+        self.fileTable[name] = id
 
     def ls(self):
         for file_row in self.fileTable:

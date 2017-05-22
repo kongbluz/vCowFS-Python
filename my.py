@@ -44,6 +44,8 @@ import logging
 from collections import defaultdict
 from llfuse import FUSEError
 from argparse import ArgumentParser
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 try:
     import faulthandler
@@ -175,15 +177,16 @@ class Operations(llfuse.Operations):
         entry.generation = 0
         entry.entry_timeout = 300
         entry.attr_timeout = 300
-        if row.type == 'file':
-            log.debug("is file")
-            entry.st_mode = 33279
-        else:
-            log.debug("is dir")
-            entry.st_mode = 16877
+        # if row.type == 'file':
+        #     log.debug("is file")
+        #     entry.st_mode = 33279
+        # else:
+        #     log.debug("is dir")
+        #     entry.st_mode = 16877
+        entry.st_mode = row.mode
         entry.st_nlink = row.getNlink()
-        entry.st_uid = os.getuid()
-        entry.st_gid = os.getgid()
+        entry.st_uid = row.uid
+        entry.st_gid = row.gid
         entry.st_rdev = 0
         entry.st_size = 0
 
@@ -209,7 +212,13 @@ class Operations(llfuse.Operations):
 
         if off == 0:
             rootz = r_inode.getInodeByID(inode).fileTable
-            count = 0
+            parent = r_inode.getInodeByID(inode).parent
+            yield  (b".", self.getattr(inode), inode)
+            if parent == None:
+                yield  (b"..", self.getattr(inode), inode)
+            else:
+                yield  (b"..", self.getattr(parent), parent)
+            # yield  ("..", self.getattr(rootz[name]), rootz[name])
             for name in rootz:
                 yield  ( str.encode(name), self.getattr(rootz[name]), rootz[name])
 
@@ -311,24 +320,20 @@ class Operations(llfuse.Operations):
             self.cursor.execute('UPDATE inodes SET data=?, size=? WHERE id=?',
                                 (buffer(data), attr.st_size, inode))
         if fields.update_mode:
-            self.cursor.execute('UPDATE inodes SET mode=? WHERE id=?',
-                                (attr.st_mode, inode))
+            log.debug("********** permission : " + str(attr.st_mode))
+            r_inode.getInodeByID(inode).mode = attr.st_mode
 
         if fields.update_uid:
-            self.cursor.execute('UPDATE inodes SET uid=? WHERE id=?',
-                                (attr.st_uid, inode))
+            r_inode.getInodeByID(inode).uid = attr.st_uid
 
         if fields.update_gid:
-            self.cursor.execute('UPDATE inodes SET gid=? WHERE id=?',
-                                (attr.st_gid, inode))
+            r_inode.getInodeByID(inode).gid = attr.st_gid
 
         if fields.update_atime:
-            self.cursor.execute('UPDATE inodes SET atime_ns=? WHERE id=?',
-                                (attr.st_atime_ns, inode))
+            r_inode.getInodeByID(inode).atime_ns = attr.st_atime_ns
 
         if fields.update_mtime:
-            self.cursor.execute('UPDATE inodes SET mtime_ns=? WHERE id=?',
-                                (attr.st_mtime_ns, inode))
+            r_inode.getInodeByID(inode).st_mtime_ns = attr.mtime_ns
 
         return self.getattr(inode)
 
