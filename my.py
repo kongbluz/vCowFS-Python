@@ -209,7 +209,13 @@ class Operations(llfuse.Operations):
 
         if off == 0:
             rootz = r_inode.getInodeByID(inode).fileTable
-            count = 0
+            parent = r_inode.getInodeByID(inode).parent
+            yield  (b".", self.getattr(inode), inode)
+            if parent == None:
+                yield  (b"..", self.getattr(inode), inode)
+            else:
+                yield  (b"..", self.getattr(parent), parent)
+            # yield  ("..", self.getattr(rootz[name]), rootz[name])
             for name in rootz:
                 yield  ( str.encode(name), self.getattr(rootz[name]), rootz[name])
 
