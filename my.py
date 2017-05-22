@@ -44,6 +44,8 @@ import logging
 from collections import defaultdict
 from llfuse import FUSEError
 from argparse import ArgumentParser
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 try:
     import faulthandler
@@ -255,8 +257,17 @@ class Operations(llfuse.Operations):
         return self._create(inode_p, name, mode, ctx, target=target)
 
     def rename(self, inode_p_old, name_old, inode_p_new, name_new, ctx):
-        log.debug("rename")
+        log.debug("rename {} -> {}".format(name_old, name_new))
+        log.debug("Inode old[{}] new[{}]".format(inode_p_old, inode_p_new))
         entry_old = self.lookup(inode_p_old, name_old)
+
+        odir = r_inode.getInodeByID(inode_p_old)
+        ndir = r_inode.getInodeByID(inode_p_new)
+
+        print("$$$$$$$$$$$  OLD")
+        pp.pprint(odir.fileTable)
+        print("$$$$$$$$$$$  NEW")
+        pp.pprint(ndir.fileTable)
 
         try:
             entry_new = self.lookup(inode_p_new, name_new)
@@ -271,9 +282,14 @@ class Operations(llfuse.Operations):
             self._replace(inode_p_old, name_old, inode_p_new, name_new,
                           entry_old, entry_new)
         else:
-            self.cursor.execute("UPDATE contents SET name=?, parent_inode=? WHERE name=? "
-                                "AND parent_inode=?", (name_new, inode_p_new,
-                                                       name_old, inode_p_old))
+            nid = odir.fileTable[name_old.decode("utf-8")]
+            odir.rmInodeTable(name_old.decode("utf-8"))
+            ndir.addInodeTable(name_new.decode("utf-8"), nid)
+
+        print("XXXXXXXXXXXX  OLD")
+        pp.pprint(odir.fileTable)
+        print("XXXXXXXXXXXX  NEW")
+        pp.pprint(ndir.fileTable)
 
     def _replace(self, inode_p_old, name_old, inode_p_new, name_new,
                  entry_old, entry_new):

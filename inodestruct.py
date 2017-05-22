@@ -68,18 +68,24 @@ class DirNode(Inode):
 
     def addFile(self, name):
         f = r_inode.addFile()
-        self.fileTable[name] = f.id
+        self.addInodeTable(name, f.id)
         return f
 
     def addDir(self, name):
         d = r_inode.addDir(self.id)
-        self.fileTable[name] = d.id
+        self.addInodeTable(name, d.id)
         return d
 
     def rmInode(self, name):
         id = self.fileTable[name]
         r_inode.delInode(id)
         del self.fileTable[name]
+
+    def rmInodeTable(self, name):
+        del self.fileTable[name]
+
+    def addInodeTable(self, name, id):
+        self.fileTable[name] = id
 
     def ls(self):
         for file_row in self.fileTable:
