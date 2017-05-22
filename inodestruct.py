@@ -53,6 +53,7 @@ class FileNode(Inode):
         self.type = 'file'
         self.data = ''
         self.mode = 33279
+        self.fileTable = None
 
     def write(self, data):
         self.data = data

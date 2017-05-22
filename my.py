@@ -310,15 +310,17 @@ class Operations(llfuse.Operations):
     def setattr(self, inode, attr, fields, fh, ctx):
         log.debug("setattr")
         if fields.update_size:
-            data = self.get_row('SELECT data FROM inodes WHERE id=?', (inode,))[0]
+            n = r_inode.getInodeByID(inode)
+            data = n.data
+            # data = self.get_row('SELECT data FROM inodes WHERE id=?', (inode,))[0]
             if data is None:
                 data = b''
             if len(data) < attr.st_size:
                 data = data + b'\0' * (attr.st_size - len(data))
             else:
                 data = data[:attr.st_size]
-            self.cursor.execute('UPDATE inodes SET data=?, size=? WHERE id=?',
-                                (buffer(data), attr.st_size, inode))
+            n.write(buffer(str.encode(data)))
+
         if fields.update_mode:
             log.debug("********** permission : " + str(attr.st_mode))
             r_inode.getInodeByID(inode).mode = attr.st_mode
@@ -388,7 +390,7 @@ class Operations(llfuse.Operations):
         return (x.id,self.getattr(x.id))
 
         #entry = self._create(inode_parent, name, mode, ctx)
-        
+
         #self.inode_open_count[entry.st_ino] += 1
         #return (entry.st_ino, entry)
 
@@ -418,9 +420,6 @@ class Operations(llfuse.Operations):
         print("length =="+str(length))
         print("strrrrrrrrrr ="+data)
 
-        if data is None:
-            data = ''
-
         dataByte = str.encode(data)
 
         print("dataByte =")
@@ -431,23 +430,26 @@ class Operations(llfuse.Operations):
 
         return returnData
 
+
+
     def write(self, fh, offset, buf):
         log.debug("write")
         #data = self.get_row('SELECT data FROM inodes WHERE id=?', (fh,))[0]
-        fileInode = r_inode.getInodeByID(fh)        
-        data = b''
+        fileInode = r_inode.getInodeByID(fh)
+        data = str.encode(fileInode.read())
+        # data = b'test worked!'
         data = data[:offset] + buf + data[offset+len(buf):]
-        dataStr = data.decode("utf-8") 
+        dataStr = data.decode("utf-8")
 
         print("offset "+str(offset))
         print("buf ==")
         print(buf)
         print("strrrrrrrrrr ="+dataStr)
-        
+
         fileInode.write(dataStr);
         return len(buf)
 
-   
+
 
 class NoUniqueValueError(Exception):
     def __str__(self):
