@@ -51,13 +51,13 @@ class FileNode(Inode):
     def __init__(self, id):
         super().__init__(id)
         self.type = 'file'
-        self.data = []
+        self.data = [datablockT.addDatablock("")]
         self.mode = 33279
         self.fileTable = None
         self.size = 0
 
-    def write(self, data):
-        self.data[0] = data
+    def write(self, n_data):
+        datablockT.write(self.data[0], n_data)
 
     def read(self):
         return self.data
@@ -114,7 +114,7 @@ class DataTable():
     def addDatablock(self, data):
         self.count += 1
         count = self.count
-        self.slot[count] = data
+        self.slot[count] = str(data)
         return self.count
 
     def delDatablock(self, id):
