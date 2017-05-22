@@ -52,6 +52,7 @@ class FileNode(Inode):
         super().__init__(id)
         self.type = 'file'
         self.data = ''
+        self.mode = 33279
 
     def write(self, data):
         self.data = data
@@ -69,6 +70,7 @@ class DirNode(Inode):
         self.type = 'dir'
         self.fileTable = {}
         self.parent = parent
+        self.node = 16877
 
     def addFile(self, name):
         f = r_inode.addFile()
