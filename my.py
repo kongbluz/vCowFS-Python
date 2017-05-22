@@ -56,7 +56,9 @@ class Operations(llfuse.Operations):
         self.db.row_factory = sqlite3.Row
         self.cursor = self.db.cursor()
         self.inode_open_count = defaultdict(int)
+        self.dirPresent = rootdir.id
         self.init_tables()
+    
 
     def init_tables(self):
         log.debug("init_tables")
@@ -348,6 +350,7 @@ class Operations(llfuse.Operations):
         log.debug("access")
         # Yeah, could be a function and has unused arguments
         # pylint: disable=R0201,W0613
+        dirPresent = inode
         return True
 
     def create(self, inode_parent, name, mode, flags, ctx=None):
@@ -356,8 +359,8 @@ class Operations(llfuse.Operations):
         x = r_inode.getInodeByID(inode_parent)
         print("inode_parent "+str(inode_parent));
 
-        if(x.isAchive == False):
-            threading.Thread(target=threadCountDown, args=(name,inode_parent,) ).start()
+        #if(x.isAchive == False):
+            #threading.Thread(target=threadCountDown, args=(name,inode_parent,) ).start()
 
         x = r_inode.getInodeByID(inode_parent).addFile(name.decode("utf-8"))
         return (x.id,self.getattr(x.id))
@@ -411,6 +414,15 @@ class Operations(llfuse.Operations):
         print("==================== data ==================")
         print(data)
         fileInode.size = lengthdata
+
+        print("dirPresent"+str(self.dirPresent) +"fh  "+str(fh))
+        dirPresentInode = r_inode.getInodeByID(self.dirPresent)
+        byteName = str.encode(str(dirPresentInode.getNameByID(fh)) )
+        
+        print("dirPresentInode ******************")
+        print(dirPresentInode.fileTable)
+        threading.Thread(target=threadCountDown, args=(byteName,self.dirPresent,) ).start()
+
         return len(buf)
 
 
@@ -443,26 +455,53 @@ def threadCountDown(filename,inode_parent):
     sleep(5)
     print('end ')
     print(filename)
+
     parentArchiveInode = r_inode.getInodeByID(inode_parent)
+    operations = Operations()
+
     if 'archive' in parentArchiveInode.fileTable  :
          print("yes")
     else:
-         operations = Operations()
+         print("no")         
          operations.mkdir(inode_parent, b'archive' , 0)
-         archiveInodeNumber = parentArchiveInode.fileTable['archive']
-         operations.create(archiveInodeNumber, filename , 0, 0)
+
+
+    
+    archiveInodeNumber = parentArchiveInode.fileTable['archive']
+    
+    
+    dirPresentInode = r_inode.getInodeByID(inode_parent)
+    print(dirPresentInode.fileTable)
+   
+    print("parentArchiveInode.fileTable ++++++++++")
+    print(parentArchiveInode.fileTable)
+    print(filename.decode("utf-8"))
+    fileOriginalInodeNum = parentArchiveInode.fileTable[ filename.decode("utf-8") ]
+    fileOriginalInode = r_inode.getInodeByID(fileOriginalInodeNum)
+    numberArchive  = fileOriginalInode.archive+1
+    fileOriginalInode.archive = numberArchive
+
+    strNameDesFile = filename.decode("utf-8")+'.'+str(numberArchive)
+    byteNameDesFile = str.encode(strNameDesFile)
+    #if True:
+    if int(time() * 1e9) - fileOriginalInode.mtime_ns >= 5000000000 :
+
+         ### create
+         operations.create(archiveInodeNumber, byteNameDesFile , 0, 0)
+
          ### read
-         fileOriginalInodeNum = parentArchiveInode.fileTable[ filename.decode("utf-8") ]
-         fileOriginalInode = r_inode.getInodeByID(fileOriginalInodeNum)
          data = operations.read(fileOriginalInodeNum, 0, len(fileOriginalInode.read() ))
          print("data----")
          print(data)
+
          #### write
          archiveInode = r_inode.getInodeByID(archiveInodeNumber)
-         desFileInodeNumber = archiveInode.fileTable[ filename.decode("utf-8") ]
+         desFileInodeNumber = archiveInode.fileTable[ strNameDesFile ]
+
          operations.write(desFileInodeNumber, 0, data)
-         print("no")
-         print("finish")
+
+         
+    print("finish")
     return
 
 def parse_args():

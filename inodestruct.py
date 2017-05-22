@@ -57,6 +57,7 @@ class FileNode(Inode):
         self.mode = 33279
         self.fileTable = None
         self.size = 0
+        self.archive = 0
 
     def write(self, n_data):
         self.atime_ns = int(time() * 1e9)
@@ -121,6 +122,14 @@ class DirNode(Inode):
 
     def getNlink(self):
         return len(self.fileTable)
+
+    def getNameByID(self,inodeNumber):
+        for file_row in self.fileTable:
+            fid = self.fileTable[file_row]
+            if fid == inodeNumber:
+                 return file_row
+
+        return None
 
 class DataTable():
     def __init__(self):
