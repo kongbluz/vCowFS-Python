@@ -11,7 +11,7 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 | :x:                    | Versioning Design |
 | :x:                    | Mount/Unmount FS |
 | :x:                    | Open/create/close/delete/truncate a file |
-| :x:                    | Create/remove/rename/delete a directory |
+| :heavy_check_mark:                    | Create/remove/rename/delete a directory |
 | :heavy_check_mark:                    | Chmod/chown a file or directory |
 | :x:                    | Listing file and directory with name, size, date, owner |
 | :x:                    | Listing file and directory with last modified date and time |
