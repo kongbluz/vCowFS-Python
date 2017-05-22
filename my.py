@@ -34,11 +34,13 @@ if (os.path.exists(os.path.join(basedir, 'setup.py')) and
     os.path.exists(os.path.join(basedir, 'src', 'llfuse'))):
     sys.path.append(os.path.join(basedir, 'src'))
 
+import threading
+
 import llfuse
 from inodestruct import *
 import errno
 import stat
-from time import time
+from time import time , sleep
 import sqlite3
 import logging
 from collections import defaultdict
@@ -87,6 +89,7 @@ class Operations(llfuse.Operations):
         self.cursor = self.db.cursor()
         self.inode_open_count = defaultdict(int)
         self.init_tables()
+        self.threads = []
 
     def init_tables(self):
         log.debug("init_tables")
@@ -341,7 +344,7 @@ class Operations(llfuse.Operations):
         log.debug("mknod")
         return self._create(inode_p, name, mode, ctx, rdev=rdev)
 
-    def mkdir(self, inode_p, name, mode, ctx):
+    def mkdir(self, inode_p, name, mode, ctx=None):
         log.debug("mkdir")
         x = r_inode.getInodeByID(inode_p).addDir(name.decode("utf-8"))
         return self.getattr(x.id)
@@ -379,18 +382,25 @@ class Operations(llfuse.Operations):
         # Yeah, could be a function and has unused arguments
         #pylint: disable=R0201,W0613
         return True
+    
+           
 
-    def create(self, inode_parent, name, mode, flags, ctx):
+    def create(self, inode_parent, name, mode, flags, ctx=None):
         log.debug("create")
         #pylint: disable=W0612
+
+        x = r_inode.getInodeByID(inode_parent)        
+        print("inode_parent "+str(inode_parent));
+
+        if(x.isAchive == False):
+            threading.Thread(target=threadCountDown, args=(name,inode_parent,) ).start()
+            #self.threads.append(t)
+            #t.start()
 
         x = r_inode.getInodeByID(inode_parent).addFile(name.decode("utf-8"))
         return (x.id,self.getattr(x.id))
 
-        #entry = self._create(inode_parent, name, mode, ctx)
         
-        #self.inode_open_count[entry.st_ino] += 1
-        #return (entry.st_ino, entry)
 
     def _create(self, inode_p, name, mode, ctx, rdev=0, target=None):
         log.debug("_create")
@@ -448,6 +458,7 @@ class Operations(llfuse.Operations):
         return len(buf)
 
    
+   
 
 class NoUniqueValueError(Exception):
     def __str__(self):
@@ -471,6 +482,25 @@ def init_logging(debug=False):
         handler.setLevel(logging.INFO)
         root_logger.setLevel(logging.INFO)
     root_logger.addHandler(handler)
+
+def threadCountDown(filename,inode_parent):        
+    print('create thread')
+    sleep(5)
+    print('end ')
+    print(filename)
+
+    x = r_inode.getInodeByID(inode_parent)
+    print(x.fileTable)
+    if 'archive' in x.fileTable  :         
+         print("yes")
+    else:
+         operations = Operations()
+         operations.mkdir(inode_parent, b'archive' , 0)
+         archiveInode = x.fileTable['archive']
+         operations.create(archiveInode, filename , 0, 0)
+         print("no")
+    print("finish")
+    return 
 
 def parse_args():
     '''Parse command line'''

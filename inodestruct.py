@@ -36,6 +36,7 @@ class Inode():
         self.atime_ns = int(time() * 1e9)
         self.mtime_ns = int(time() * 1e9)
         self.ctime_ns = int(time() * 1e9)
+        
 
     def pms_str(self):
         return 'rwxrwxrwx'
@@ -71,6 +72,7 @@ class DirNode(Inode):
         self.fileTable = {}
         self.parent = parent
         self.node = 16877
+        self.isAchive = False
 
     def addFile(self, name):
         f = r_inode.addFile()
