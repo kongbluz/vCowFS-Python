@@ -6,14 +6,6 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
-# We are running from the Python-LLFUSE source directory, put it
-# into the Python path.
-basedir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-if (os.path.exists(os.path.join(basedir, 'setup.py')) and
-    os.path.exists(os.path.join(basedir, 'src', 'llfuse'))):
-    sys.path.append(os.path.join(basedir, 'src'))
-
-import _pickle as pickle
 import threading
 import llfuse
 import inodestruct
@@ -374,8 +366,8 @@ def parse_args(args):
                         help='Image file location')
     parser.add_argument('mountpoint', type=str,
                         help='Where to mount the file system')
-    parser.add_argument('-t', action='store_true', default=False,
-                        help='Enable debugging output')
+    parser.add_argument('-t', action='', default=False,
+                        help='Time of versioning')
     parser.add_argument('time', type=str,
                         help='time of versioning period')
     parser.add_argument('--debug', action='store_true', default=False,

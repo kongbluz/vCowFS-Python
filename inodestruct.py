@@ -1,9 +1,5 @@
 import llfuse
 import os
-import pprint
-
-pp = pprint.PrettyPrinter(indent=4)
-
 from time import time
 
 class RootINode():
@@ -39,10 +35,6 @@ class Inode():
         self.atime_ns = int(time() * 1e9)
         self.mtime_ns = int(time() * 1e9)
         self.ctime_ns = int(time() * 1e9)
-
-
-    def pms_str(self):
-        return 'rwxrwxrwx'
 
     def __str__(self):
         return str(self.id)
@@ -115,14 +107,6 @@ class DirNode(Inode):
     def addInodeTable(self, name, id):
         self.fileTable[name] = id
 
-    def ls(self):
-        for file_row in self.fileTable:
-            fid = self.fileTable[file_row]
-            f = r_inode.getInodeByID(fid)
-            print('{}{} {} id: {} time: {}'.format('-' if f.type == 'file' else 'd',
-                                         f.pms_str(),
-                                         file_row, fid, f.c_time))
-
     def getNlink(self):
         return len(self.fileTable)
 
@@ -131,7 +115,6 @@ class DirNode(Inode):
             fid = self.fileTable[file_row]
             if fid == inodeNumber:
                  return file_row
-
         return None
 
 class DataTable():
