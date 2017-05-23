@@ -5,7 +5,7 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 
 | Implemented?        | Commmand           |
 | ------------- |:-------------:|
-| :x:                    | On-time submission |
+| :heavy_check_mark:                    | On-time submission |
 | :heavy_check_mark:     | Compile an build |
 | :heavy_check_mark:                    | CoW FS Design |
 | :heavy_check_mark:                    | Versioning Design |
@@ -16,7 +16,7 @@ This project was submitted to **Operating System subject, CE KMITL 2016**
 | :heavy_check_mark:                    | Listing file and directory with name, size, date, owner |
 | :heavy_check_mark:                    | Listing file and directory with last modified date and time |
 | :heavy_check_mark:     | Reading a file |
-| :x:                    | Writing and fsync a file |
+| :confused:                    | Writing and fsync a file |
 | :heavy_check_mark:                    | Auto-versioning a file |
 | :heavy_check_mark:                    | Retrieve an old-version of a file |
 | :heavy_check_mark:                    | Retrieve the file on re-mounting |
